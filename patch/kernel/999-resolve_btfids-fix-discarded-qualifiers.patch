@@ -1,0 +1,11 @@
+--- a/tools/lib/bpf/libbpf.c
++++ b/tools/lib/bpf/libbpf.c
+@@ -11959,7 +11959,7 @@ static int resolve_full_path(const char *search_prefixes, const char *file_name,
+ 		if (!search_paths[i])
+ 			continue;
+ 		for (s = search_paths[i]; s != NULL; s = strchr(s, ':')) {
+-			char *next_path;
++			const char *next_path;
+ 			int seg_len;
+
+ 			if (s[0] == ':')

@@ -166,6 +166,15 @@ cp -rf ${ffdir}/patch/cgroupfs/900-mount-cgroup-v2-hierarchy-to-sys-fs-cgroup-cg
 cp -rf ${ffdir}/patch/cgroupfs/901-fix-cgroupfs-umount.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 cp -rf ${ffdir}/patch/cgroupfs/902-mount-sys-fs-cgroup-systemd-for-docker-systemd-suppo.patch ./feeds/packages/utils/cgroupfs-mount/patches/
 
+p "内核兼容补丁 ( resolve_btfids )"
+kernel_hack_dir=$(ls -d ./target/linux/generic/hack-${current_version}* 2>/dev/null | head -n 1)
+if [ -z "${kernel_hack_dir}" ]; then
+    p "未命中内核补丁目录 target/linux/generic/hack-${current_version}*"
+    exit 1
+fi
+p "命中内核补丁目录: ${kernel_hack_dir}"
+cp -f ${ffdir}/patch/kernel/999-resolve_btfids-fix-discarded-qualifiers.patch ${kernel_hack_dir}/
+
 p "替换 sing-box"
 rm -rf ./feeds/packages/net/sing-box
 cp -rf ${otherdir}/imm_pkg_ma/net/sing-box ./feeds/packages/net/sing-box
@@ -223,10 +232,20 @@ cp -rf ${otherdir}/amlogic/luci-app-amlogic ./package/add/
 
 
 p "Vermagic 内核兼容模块"
-wget https://downloads.immortalwrt.org/releases/${latest_release}/targets/armsr/armv8/profiles.json
-jq -r '.linux_kernel.vermagic' profiles.json > .vermagic
-cat .vermagic
-sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
+profiles_url="https://downloads.immortalwrt.org/releases/${latest_release}/targets/armsr/armv8/profiles.json"
+if wget -q -O profiles.json "${profiles_url}" && [ -s profiles.json ]; then
+    vermagic=$(jq -r '.linux_kernel.vermagic // empty' profiles.json)
+    if [ -n "${vermagic}" ]; then
+        printf '%s\n' "${vermagic}" > .vermagic
+        cat .vermagic
+        sed -i -e 's/^\(.\).*vermagic$/\1cp $(TOPDIR)\/.vermagic $(LINUX_DIR)\/.vermagic/' include/kernel-defaults.mk
+        p "vermagic 已写入"
+    else
+        p "profiles.json 中未找到 linux_kernel.vermagic，跳过 vermagic 注入"
+    fi
+else
+    p "profiles.json 下载失败或为空，跳过 vermagic 注入"
+fi
 rm -f profiles.json
 
 
