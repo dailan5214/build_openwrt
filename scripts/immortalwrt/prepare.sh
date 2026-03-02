@@ -46,6 +46,7 @@ clone main ${amlogic_repo} ${otherdir}/amlogic &
 clone master ${dockerman_repo} ${otherdir}/dockerman &
 clone master ${openwrt_add_repo} ${otherdir}/openwrt-add &
 clone main ${momo_repo} ${otherdir}/openwrt-momo &
+clone main ${asvow_tailscale_repo} ${otherdir}/luci-app-tailscale &
 wait && sync
 
 p "一些调整"
@@ -196,6 +197,11 @@ p "Daed"
 rm -rf ./feeds/luci/applications/luci-app-daed ./feeds/packages/{net/daed,libs/libcron}
 cp -rf ${otherdir}/openwrt-add/luci-app-daed ./package/add/
 cp -rf ${otherdir}/imm_pkg_ma/libs/libcron ./feeds/packages/libs/libcron
+
+p "Tailscale"
+rm -rf ./feeds/luci/applications/luci-app-tailscale
+cp -rf ${otherdir}/luci-app-tailscale ./package/add/luci-app-tailscale
+sed -i '/\/etc\/init.d\/tailscale/d;/\/etc\/config\/tailscale/d' ./feeds/packages/net/tailscale/Makefile
 
 p "Docker 容器"
 rm -rf ./feeds/luci/applications/luci-app-dockerman
