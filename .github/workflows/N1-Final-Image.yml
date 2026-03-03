@@ -1,0 +1,91 @@
+name: N1-Final-Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_img:
+        description: "源镜像绝对路径（建议 199 上的 200G 测试镜像）"
+        required: true
+        default: "/root/ImmortalWrt_amlogic_s905d_k6.6.122_2026.03.02_btf.img"
+      output_prefix:
+        description: "输出前缀绝对路径（不带 .img 后缀）"
+        required: true
+        default: "/root/ImmortalWrt_amlogic_s905d_k6.6.122_2026.03.02_n1_6.5g_btf"
+      target_size_gib:
+        description: "目标镜像逻辑大小（GiB）"
+        required: true
+        default: "6.5"
+      btrfs_size_mib:
+        description: "缩容前 btrfs 目标大小（MiB）"
+        required: true
+        default: "5500"
+      stop_qemu:
+        description: "处理前是否自动停机并在结束后拉起 QEMU"
+        type: boolean
+        required: true
+        default: true
+      qemu_pidfile:
+        description: "QEMU pidfile 路径"
+        required: true
+        default: "/root/imwrt-qemu.pid"
+      qemu_pattern:
+        description: "兜底 pkill 正则（可留默认）"
+        required: true
+        default: "qemu-system-aarch64.*ImmortalWrt_amlogic_s905d_k6.6.122_2026.03.02_btf.img"
+      qemu_start_script:
+        description: "QEMU 启动脚本路径"
+        required: true
+        default: "/root/start_imwrt_btf_qemu.sh"
+
+jobs:
+  finalize:
+    runs-on: [self-hosted, Linux]
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 生成 N1 最终镜像
+      env:
+        SOURCE_IMG: ${{ inputs.source_img }}
+        OUTPUT_PREFIX: ${{ inputs.output_prefix }}
+        TARGET_SIZE_GIB: ${{ inputs.target_size_gib }}
+        BTRFS_SIZE_MIB: ${{ inputs.btrfs_size_mib }}
+        STOP_QEMU: ${{ inputs.stop_qemu }}
+        QEMU_PIDFILE: ${{ inputs.qemu_pidfile }}
+        QEMU_PATTERN: ${{ inputs.qemu_pattern }}
+        QEMU_START_SCRIPT: ${{ inputs.qemu_start_script }}
+      run: |
+        set -euo pipefail
+
+        args=(
+          --source-img "$SOURCE_IMG"
+          --output-prefix "$OUTPUT_PREFIX"
+          --target-size-gib "$TARGET_SIZE_GIB"
+          --btrfs-size-mib "$BTRFS_SIZE_MIB"
+        )
+
+        if [ "$STOP_QEMU" = "true" ]; then
+          args+=(
+            --stop-qemu
+            --qemu-pidfile "$QEMU_PIDFILE"
+            --qemu-pattern "$QEMU_PATTERN"
+            --qemu-start-script "$QEMU_START_SCRIPT"
+          )
+        fi
+
+        bash scripts/pack/finalize_n1_image.sh "${args[@]}"
+
+        mkdir -p out
+        cp "${OUTPUT_PREFIX}.img" out/
+        cp "${OUTPUT_PREFIX}.img.gz" out/
+        cp "${OUTPUT_PREFIX}.sha256" out/
+
+        ls -lh out/
+
+    - name: 上传最终镜像
+      uses: actions/upload-artifact@v4
+      with:
+        name: n1-final-image
+        path: out/*
+        compression-level: 0

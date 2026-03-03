@@ -16,7 +16,7 @@
 - 固件对一些命令进行了简化，如 `ungz = tar -xvzf`，`777 = chmod -R 777`，`mkdirg X = mkdir -p X && cd X` 等，详情可查看仓库 [shinit](patch/files/etc/shinit) 文件。
 - 在终端里输入命令起始部分再通过键盘 <kbd>↑</kbd> <kbd>↓</kbd> 可以匹配执行过的历史命令快速输入。
 - 固件刷机：具体方法请认真阅读 ⌈ [使用说明](doc/readme.md) ⌋ 。
-
+- N1 最终镜像（6.5GiB）流程：详见 ⌈ [N1 最终镜像流程](doc/n1-final-image.md) ⌋ 。
 > [!IMPORTANT]
 > iStoreOS 固件相对于其官方固件仅保留插件商店，可以看作包含 iStore 插件商店的原版 OpenWrt-22.03 固件。
 
